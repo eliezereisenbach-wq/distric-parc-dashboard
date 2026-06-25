@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>District Bagel — Financial Dashboard 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
+
+  /* ── NAV ── */
+  .topbar{background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100;padding:0 24px}
+  .topbar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:24px;height:56px}
+  .logo{font-weight:700;font-size:16px;color:#1e293b;white-space:nowrap}
+  .logo span{color:#2563eb}
+  .tabs{display:flex;gap:2px;flex:1}
+  .tab{padding:8px 16px;border:none;background:none;cursor:pointer;border-radius:6px;font-size:14px;font-weight:500;color:#64748b;transition:all .15s}
+  .tab.active{background:#eff6ff;color:#2563eb}
+  .tab:hover:not(.active){background:#f8fafc;color:#374151}
+  .updated{font-size:12px;color:#94a3b8;white-space:nowrap}
+
+  /* ── LAYOUT ── */
+  .page{display:none;max-width:1200px;margin:0 auto;padding:24px}
+  .page.active{display:block}
+
+  /* ── CARDS ── */
+  .kpi-row{display:grid;gap:16px;margin-bottom:24px}
+  .kpi-row.c4{grid-template-columns:repeat(4,1fr)}
+  .kpi-row.c3{grid-template-columns:repeat(3,1fr)}
+  .kpi-row.c5{grid-template-columns:repeat(5,1fr)}
+  @media(max-width:900px){.kpi-row.c4,.kpi-row.c5{grid-template-columns:repeat(2,1fr)}.kpi-row.c3{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:600px){.kpi-row.c4,.kpi-row.c3,.kpi-row.c5{grid-template-columns:1fr 1fr}}
+
+  .kpi{background:#fff;border-radius:12px;padding:20px;border:1px solid #e2e8f0;position:relative;overflow:hidden}
+  .kpi-label{font-size:12px;font-weight:500;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .kpi-value{font-size:28px;font-weight:700;color:#1e293b;line-height:1;margin-bottom:4px}
+  .kpi-sub{font-size:12px;color:#94a3b8}
+  .kpi-badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;margin-top:6px}
+  .badge-up{background:#dcfce7;color:#16a34a}
+  .badge-down{background:#fee2e2;color:#dc2626}
+  .badge-neutral{background:#f1f5f9;color:#64748b}
+  .kpi::before{content:'';position:absolute;top:0;right:0;width:4px;height:100%;border-radius:0 12px 12px 0}
+  .kpi.blue::before{background:#2563eb}
+  .kpi.green::before{background:#16a34a}
+  .kpi.orange::before{background:#ea580c}
+  .kpi.red::before{background:#dc2626}
+  .kpi.purple::before{background:#7c3aed}
+  .kpi.teal::before{background:#0891b2}
+
+  /* ── CHART PANELS ── */
+  .panel{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:24px;margin-bottom:24px}
+  .panel-title{font-size:14px;font-weight:600;color:#374151;margin-bottom:4px}
+  .panel-sub{font-size:12px;color:#94a3b8;margin-bottom:20px}
+  .panel-row{display:grid;gap:16px;margin-bottom:24px}
+  .panel-row.c2{grid-template-columns:2fr 1fr}
+  @media(max-width:800px){.panel-row.c2{grid-template-columns:1fr}}
+  .chart-wrap{position:relative}
+  canvas{max-height:300px}
+
+  /* ── TABLE ── */
+  .tbl-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:#f8fafc;color:#64748b;font-weight:600;text-align:right;padding:10px 12px;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+  td{padding:10px 12px;border-bottom:1px solid #f1f5f9;color:#374151;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#f8fafc}
+  .num{text-align:left;font-variant-numeric:tabular-nums}
+  .tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px}
+  .tag-pos{background:#dcfce7;color:#16a34a}
+  .tag-neu{background:#fef9c3;color:#a16207}
+  .tag-neg{background:#fee2e2;color:#dc2626}
+  .tag-pas{background:#f3e8ff;color:#7c3aed}
+
+  /* ── GAUGE ── */
+  .gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:12px 0}
+  .gauge-val{font-size:36px;font-weight:700;color:#1e293b;margin-top:-8px}
+  .gauge-lbl{font-size:12px;color:#94a3b8;margin-bottom:16px}
+  .gauge-row{display:flex;justify-content:space-around;width:100%;margin-top:8px}
+  .gauge-item{text-align:center}
+  .gauge-item span{display:block;font-size:11px;color:#94a3b8;margin-top:2px}
+  .gauge-item strong{font-size:15px;font-weight:600;color:#374151}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+  .pill{padding:4px 12px;border-radius:99px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:12px;font-weight:500;color:#64748b;transition:all .15s}
+  .pill.active{background:#2563eb;color:#fff;border-color:#2563eb}
+
+  /* ── FOOTER ── */
+  .dash-footer{text-align:center;color:#cbd5e1;font-size:11px;padding:32px 0 16px}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="topbar-inner">
+    <div class="logo">District <span>Bagel</span> · Park Ave</div>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('overview',this)">Overview</button>
+      <button class="tab" onclick="showTab('sales',this)">Sales & Channels</button>
+      <button class="tab" onclick="showTab('pl',this)">P&L</button>
+    </div>
+    <div class="updated" id="updatedLbl"></div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════ OVERVIEW ═══════════════════════════════════ -->
+<div class="page active" id="page-overview">
+
+  <div class="kpi-row c4" style="margin-top:0">
+    <div class="kpi blue">
+      <div class="kpi-label">YTD מכירות</div>
+      <div class="kpi-value" id="kpi-ytd">—</div>
+      <div class="kpi-sub" id="kpi-ytd-sub">ינואר – יוני 2026</div>
+    </div>
+    <div class="kpi teal">
+      <div class="kpi-label">ממוצע חודשי</div>
+      <div class="kpi-value" id="kpi-avg">—</div>
+      <div class="kpi-sub" id="kpi-avg-sub">—</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">החודש הטוב ביותר</div>
+      <div class="kpi-value" id="kpi-best">—</div>
+      <div class="kpi-sub" id="kpi-best-sub">—</div>
+    </div>
+    <div class="kpi orange">
+      <div class="kpi-label">יוני MTD</div>
+      <div class="kpi-value" id="kpi-mtd">—</div>
+      <div class="kpi-sub" id="kpi-mtd-sub">—</div>
+    </div>
+  </div>
+
+  <div class="panel-row c2">
+    <div class="panel">
+      <div class="panel-title">מכירות חודשיות 2026</div>
+      <div class="panel-sub">כולל יוני MTD</div>
+      <div class="chart-wrap"><canvas id="monthlySalesChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">פיצול ערוצים YTD</div>
+      <div class="panel-sub">Clover · Curbngo · Uber Eats</div>
+      <div class="chart-wrap" style="max-height:220px"><canvas id="channelDoughnut"></canvas></div>
+      <div id="channelLegend" style="margin-top:12px;font-size:12px;display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+  </div>
+
+  <div class="kpi-row c3">
+    <div class="kpi">
+      <div class="kpi-label">Clover / קופה פנים</div>
+      <div class="kpi-value" id="ov-cl-pct">—</div>
+      <div class="kpi-sub" id="ov-cl-amt">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Curbngo / אונליין</div>
+      <div class="kpi-value" id="ov-cng-pct">—</div>
+      <div class="kpi-sub" id="ov-cng-amt">—</div>
+      <span class="kpi-badge badge-up">↑ צומח</span>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Uber Eats / משלוחים</div>
+      <div class="kpi-value" id="ov-ub-pct">—</div>
+      <div class="kpi-sub" id="ov-ub-amt">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ SALES ═══════════════════════════════════ -->
+<div class="page" id="page-sales">
+
+  <div class="kpi-row c5">
+    <div class="kpi blue">
+      <div class="kpi-label">סה"כ YTD</div>
+      <div class="kpi-value" id="s-ytd">—</div>
+      <div class="kpi-sub">ינואר – יוני</div>
+    </div>
+    <div class="kpi" style="border-right-color:#4070CC">
+      <div class="kpi-label">Clover</div>
+      <div class="kpi-value" id="s-cl">—</div>
+      <div class="kpi-sub" id="s-cl-pct">—</div>
+    </div>
+    <div class="kpi" style="border-right-color:#ea580c">
+      <div class="kpi-label">Curbngo</div>
+      <div class="kpi-value" id="s-cng">—</div>
+      <div class="kpi-sub" id="s-cng-pct">—</div>
+    </div>
+    <div class="kpi" style="border-right-color:#7c3aed">
+      <div class="kpi-label">Uber Eats</div>
+      <div class="kpi-value" id="s-ub">—</div>
+      <div class="kpi-sub" id="s-ub-pct">—</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">שבוע פסח</div>
+      <div class="kpi-value">−90%</div>
+      <div class="kpi-sub">5–11 אפריל: $2,497</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">מכירות שבועיות לפי ערוץ</div>
+    <div class="panel-sub">Clover · Curbngo · Uber Eats</div>
+    <div class="chart-wrap"><canvas id="weeklyChart" style="max-height:280px"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">טבלת מכירות שבועית</div>
+    <div class="panel-sub">דירוג לפי ביצוע ביחס לממוצע</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>שבוע</th>
+            <th class="num">Clover</th>
+            <th class="num">Curbngo</th>
+            <th class="num">Uber</th>
+            <th class="num">סה"כ</th>
+            <th>דירוג</th>
+          </tr>
+        </thead>
+        <tbody id="weeklyTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ P&L ═══════════════════════════════════ -->
+<div class="page" id="page-pl">
+
+  <div class="panel-row c2">
+    <div class="panel">
+      <div class="panel-title">P&L חודשי — ינואר–יוני 2026</div>
+      <div class="panel-sub">עמודות = עלויות מצטברות · קו = מכירות</div>
+      <div class="chart-wrap"><canvas id="plChart" style="max-height:280px"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Prime Cost לפי חודש</div>
+      <div class="panel-sub">COGS% + Labor%</div>
+      <div class="pills" id="gaugePills"></div>
+      <div class="gauge-wrap">
+        <svg width="160" height="90" viewBox="0 0 160 90">
+          <path d="M20 80 A60 60 0 0 1 140 80" fill="none" stroke="#f1f5f9" stroke-width="14" stroke-linecap="round"/>
+          <path id="gArc" d="M20 80 A60 60 0 0 1 140 80" fill="none" stroke="#2563eb" stroke-width="14" stroke-linecap="round"
+            stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+        </svg>
+        <div class="gauge-val" id="gVal">—</div>
+        <div class="gauge-lbl" id="gSub">בחר חודש</div>
+      </div>
+      <div class="gauge-row">
+        <div class="gauge-item"><strong id="gFood">—</strong><span>COGS%</span></div>
+        <div class="gauge-item"><strong id="gLabor">—</strong><span>שכר%</span></div>
+        <div class="gauge-item"><strong id="gAdmin">—</strong><span>אדמין%</span></div>
+      </div>
+      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:12px" id="gNote"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">סיכום P&L חודשי</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>חודש</th>
+            <th class="num">מכירות</th>
+            <th class="num">COGS</th>
+            <th class="num">COGS%</th>
+            <th class="num">שכר</th>
+            <th class="num">שכר%</th>
+            <th class="num">Prime</th>
+            <th class="num">רווח נקי</th>
+            <th>הערה</th>
+          </tr>
+        </thead>
+        <tbody id="plTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="dash-footer">District Bagel Park Ave · Montreal · 2026 · מתעדכן אוטומטית</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════════════════
+
+/*SNAPPY_DAILY_START*/const SNAPPY_DAILY=[];const SNAPPY_UPDATED=null;/*SNAPPY_DAILY_END*/
+
+const mData = [
+  {m:'ינואר',   sales:89583,  cogs:35245, labor:46718, admin:11076, net:-16092, cogsP:39.3, laborP:52.2, primeP:91.5, laborNorm:37374, laborNormP:41.7, primeNormP:81.0, note:'5 שבועות שכר'},
+  {m:'פברואר',  sales:95247,  cogs:39050, labor:30313, admin:11076, net:1091,   cogsP:41.0, laborP:31.8, primeP:72.8, note:'QB ✓'},
+  {m:'מרץ',     sales:125975, cogs:46501, labor:32127, admin:11076, net:20733,  cogsP:36.9, laborP:25.5, primeP:62.4, note:'עלייה במלאי לפסח'},
+  {m:'אפריל',   sales:83246,  cogs:30079, labor:20439, admin:8000,  net:24728,  cogsP:36.1, laborP:24.6, primeP:60.7, note:'שבוע פסח'},
+  {m:'מאי',     sales:94119,  cogs:26122, labor:38789, admin:10632, net:5552,   cogsP:27.8, laborP:41.2, primeP:69.0, laborNorm:31031, laborNormP:33.0, primeNormP:60.8, note:'5 שבועות שכר'},
+  {m:'יוני',    sales:/*JUNE_MTD_START*/86078/*JUNE_MTD_END*/, cogs:null, labor:null, admin:null, net:null, cogsP:null, laborP:null, primeP:null, note:'בתהליך (MTD)'},
+];
+
+const byM = {
+  ינואר: {cl:53862, cng:21156, ub:13339},
+  פברואר:{cl:63606, cng:10673, ub:12253},
+  מרץ:   {cl:92042, cng:8980,  ub:19819},
+  אפריל: {cl:35022, cng:29650, ub:9624},
+  מאי:   {cl:76870, cng:4913,  ub:12336},
+  יוני:  {cl:/*JUNE_BYM_START*/64655/*JUNE_BYM_END_CL*/, cng:16028, ub:5395},
+};
+
+const weeks = [
+  {week:"4–10 ינו",  cl:7832,  cng:5100,  ub:2985,  total:15917, m:'ינואר'},
+  {week:"11–17 ינו", cl:11062, cng:6213,  ub:2751,  total:20026, m:'ינואר'},
+  {week:"18–24 ינו", cl:9975,  cng:5701,  ub:2353,  total:18029, m:'ינואר'},
+  {week:"25–31 ינו", cl:9773,  cng:6442,  ub:3126,  total:19341, m:'ינואר'},
+  {week:"1–7 פבר",   cl:11335, cng:7986,  ub:3246,  total:22567, m:'פברואר'},
+  {week:"8–14 פבר",  cl:8975,  cng:4829,  ub:3024,  total:16829, m:'פברואר'},
+  {week:"15–21 פבר", cl:12592, cng:8615,  ub:3241,  total:24449, m:'פברואר'},
+  {week:"22–28 פבר", cl:15112, cng:8700,  ub:2742,  total:26554, m:'פברואר'},
+  {week:"1–7 מרץ",   cl:13515, cng:6929,  ub:1841,  total:22285, m:'מרץ'},
+  {week:"8–14 מרץ",  cl:11953, cng:13043, ub:3588,  total:28584, m:'מרץ'},
+  {week:"15–21 מרץ", cl:11638, cng:11401, ub:3839,  total:26878, m:'מרץ'},
+  {week:"22–28 מרץ", cl:18422, cng:16807, ub:6722,  total:41951, m:'מרץ'},
+  {week:"29מ–4א",    cl:13407, cng:24251, ub:3825,  total:41483, m:'אפריל'},
+  {week:"5–11 אפר",  cl:1365,  cng:837,   ub:295,   total:2497,  m:'אפריל', passover:true},
+  {week:"12–18 אפר", cl:11171, cng:10267, ub:2970,  total:24408, m:'אפריל'},
+  {week:"19–25 אפר", cl:10117, cng:9859,  ub:2777,  total:22753, m:'אפריל'},
+  {week:"26א–2מ",    cl:12370, cng:8687,  ub:3582,  total:24639, m:'מאי'},
+  {week:"3–9 מאי",   cl:9860,  cng:11013, ub:2784,  total:23657, m:'מאי'},
+  {week:"10–16 מאי", cl:10244, cng:8442,  ub:3308,  total:21994, m:'מאי'},
+  {week:"17–23 מאי", cl:11797, cng:9000,  ub:2587,  total:23384, m:'מאי'},
+  {week:"24–30 מאי", cl:10695, cng:9639,  ub:3068,  total:23402, m:'מאי'},
+  {week:"31מ–6י",    cl:10785, cng:9618,  ub:5232,  total:25636, m:'יוני'},
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const money  = v => v == null ? '—' : '$' + Math.round(v).toLocaleString('en');
+const moneyK = v => v == null ? '—' : '$' + Math.round(v/1000) + 'K';
+const pct    = v => v == null ? '—' : v.toFixed(1) + '%';
+
+const COLORS = {cl:'#2563eb', cng:'#ea580c', ub:'#7c3aed'};
+const chartDefaults = {
+  plugins:{legend:{labels:{font:{family:'Inter',size:12},usePointStyle:true,padding:12}}},
+  scales:{x:{ticks:{font:{family:'Inter',size:11}},grid:{display:false}},
+          y:{ticks:{font:{family:'Inter',size:11},callback:v=>'$'+Math.round(v/1000)+'K'},grid:{color:'#f1f5f9'}}}
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════════════════════════════
+function showTab(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  $('page-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPUTE
+// ═══════════════════════════════════════════════════════════════════════════
+const ytdSales  = mData.reduce((s,m)=>s+(m.sales||0),0);
+const histData  = mData.filter(m=>m.cogs!=null);
+const lastMonth = mData[mData.length-1];
+const bestMonth = [...mData].sort((a,b)=>b.sales-a.sales)[0];
+const avgSales  = Math.round(mData.slice(0,-1).reduce((s,m)=>s+m.sales,0) / (mData.length-1));
+
+// Channel totals
+let totCl=0,totCng=0,totUb=0;
+Object.values(byM).forEach(m=>{totCl+=m.cl;totCng+=m.cng;totUb+=m.ub;});
+const totAll = totCl+totCng+totUb;
+
+// Snappy updated label
+if(SNAPPY_UPDATED){
+  const d=new Date(SNAPPY_UPDATED);
+  $('updatedLbl').textContent='עודכן '+d.toLocaleDateString('he-IL')+' '+d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OVERVIEW TAB
+// ═══════════════════════════════════════════════════════════════════════════
+$('kpi-ytd').textContent = moneyK(ytdSales);
+$('kpi-avg').textContent = moneyK(avgSales);
+$('kpi-avg-sub').textContent = 'ינואר–מאי ממוצע';
+$('kpi-best').textContent = moneyK(bestMonth.sales);
+$('kpi-best-sub').textContent = bestMonth.m+' 2026';
+$('kpi-mtd').textContent = moneyK(lastMonth.sales);
+$('kpi-mtd-sub').textContent = lastMonth.note;
+
+$('ov-cl-pct').textContent  = pct(totCl/totAll*100);
+$('ov-cl-amt').textContent  = money(totCl)+' סה"כ';
+$('ov-cng-pct').textContent = pct(totCng/totAll*100);
+$('ov-cng-amt').textContent = money(totCng)+' סה"כ';
+$('ov-ub-pct').textContent  = pct(totUb/totAll*100);
+$('ov-ub-amt').textContent  = money(totUb)+' סה"כ';
+
+// Monthly sales chart
+new Chart($('monthlySalesChart').getContext('2d'), {
+  type:'bar',
+  data:{
+    labels: mData.map(m=>m.m),
+    datasets:[
+      {label:'מכירות', data:mData.map(m=>m.sales), backgroundColor:mData.map(m=>m.cogs==null?'#bfdbfe':'#2563eb'), borderRadius:6, borderSkipped:false},
+    ]
+  },
+  options:{...chartDefaults, plugins:{...chartDefaults.plugins, tooltip:{callbacks:{label:c=>money(c.raw)}}}}
+});
+
+// Channel doughnut
+new Chart($('channelDoughnut').getContext('2d'), {
+  type:'doughnut',
+  data:{
+    labels:['Clover','Curbngo','Uber Eats'],
+    datasets:[{data:[totCl,totCng,totUb], backgroundColor:['#2563eb','#ea580c','#7c3aed'], borderWidth:0, hoverOffset:4}]
+  },
+  options:{plugins:{legend:{display:false}}, cutout:'72%', maintainAspectRatio:true}
+});
+const legend = $('channelLegend');
+[['Clover','#2563eb',totCl],['Curbngo','#ea580c',totCng],['Uber Eats','#7c3aed',totUb]].forEach(([n,c,v])=>{
+  legend.innerHTML+=`<div style="display:flex;align-items:center;gap:8px;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:${c};display:inline-block"></span><span style="font-size:12px;color:#374151">${n}</span></div><span style="font-size:12px;font-weight:600;color:#1e293b">${money(v)}</span></div>`;
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SALES TAB
+// ═══════════════════════════════════════════════════════════════════════════
+$('s-ytd').textContent   = moneyK(ytdSales);
+$('s-cl').textContent    = moneyK(totCl);  $('s-cl-pct').textContent  = pct(totCl/totAll*100)+' מסה"כ';
+$('s-cng').textContent   = moneyK(totCng); $('s-cng-pct').textContent = pct(totCng/totAll*100)+' מסה"כ';
+$('s-ub').textContent    = moneyK(totUb);  $('s-ub-pct').textContent  = pct(totUb/totAll*100)+' מסה"כ';
+
+// Weekly stacked bar
+new Chart($('weeklyChart').getContext('2d'), {
+  type:'bar',
+  data:{
+    labels: weeks.map(w=>w.week),
+    datasets:[
+      {label:'Clover',  data:weeks.map(w=>w.cl),  backgroundColor:'#2563eb', stack:'s', borderRadius:0},
+      {label:'Curbngo', data:weeks.map(w=>w.cng), backgroundColor:'#ea580c', stack:'s'},
+      {label:'Uber',    data:weeks.map(w=>w.ub),  backgroundColor:'#7c3aed', stack:'s'},
+    ]
+  },
+  options:{...chartDefaults, plugins:{...chartDefaults.plugins, tooltip:{mode:'index',callbacks:{footer:items=>'סה"כ: '+money(items.reduce((s,i)=>s+i.raw,0))}}}}
+});
+
+// Weekly table
+const avgWeek = Math.round(weeks.filter(w=>!w.passover).reduce((s,w)=>s+w.total,0)/weeks.filter(w=>!w.passover).length);
+const tbody = $('weeklyTbody');
+weeks.forEach(w=>{
+  let tag,cls;
+  if(w.passover){tag='🕍 פסח';cls='tag-pas';}
+  else if(w.total>=26000){tag='🟢 חיובי';cls='tag-pos';}
+  else if(w.total>=18000){tag='🟡 בינוני';cls='tag-neu';}
+  else{tag='🔴 שלילי';cls='tag-neg';}
+  tbody.innerHTML+=`<tr><td>${w.week}</td><td class="num">${money(w.cl)}</td><td class="num">${money(w.cng)}</td><td class="num">${money(w.ub)}</td><td class="num"><strong>${money(w.total)}</strong></td><td><span class="tag ${cls}">${tag}</span></td></tr>`;
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P&L TAB
+// ═══════════════════════════════════════════════════════════════════════════
+// Stacked P&L chart
+new Chart($('plChart').getContext('2d'), {
+  type:'bar',
+  data:{
+    labels: mData.map(m=>m.m),
+    datasets:[
+      {label:'COGS',     data:mData.map(m=>m.cogs),  backgroundColor:'#fbbf2488', borderColor:'#f59e0b', borderWidth:1, stack:'s', borderRadius:0},
+      {label:'שכר',      data:mData.map(m=>m.labor), backgroundColor:'#f87171aa', borderColor:'#ef4444', borderWidth:1, stack:'s'},
+      {label:'אדמין',    data:mData.map(m=>m.admin), backgroundColor:'#c084fcaa', borderColor:'#a855f7', borderWidth:1, stack:'s'},
+      {label:'מכירות',   data:mData.map(m=>m.sales), type:'line', borderColor:'#2563eb', backgroundColor:'transparent', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#2563eb', tension:0.3, yAxisID:'y'},
+    ]
+  },
+  options:{...chartDefaults, scales:{
+    x:{ticks:{font:{family:'Inter',size:11}},grid:{display:false}},
+    y:{ticks:{font:{family:'Inter',size:11},callback:v=>'$'+Math.round(v/1000)+'K'},grid:{color:'#f1f5f9'}, stacked:true},
+  }, plugins:{...chartDefaults.plugins, tooltip:{mode:'index'}}}
+});
+
+// Gauge pills
+const pillsEl = $('gaugePills');
+[...histData.map(m=>m.m),'Q1','כל'].forEach((lbl,i)=>{
+  const btn=document.createElement('button');
+  btn.className='pill'+(i===0?' active':'');
+  btn.textContent=lbl;
+  btn.onclick=()=>{
+    document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    showGauge(lbl);
+  };
+  pillsEl.appendChild(btn);
+});
+
+function showGauge(lbl) {
+  let d;
+  if(lbl==='Q1'){
+    const q=histData.slice(0,3);
+    const qs=q.reduce((s,m)=>s+m.sales,0),qc=q.reduce((s,m)=>s+m.cogs,0),ql=q.reduce((s,m)=>s+m.labor,0);
+    d={cogsP:(qc/qs*100),laborP:(ql/qs*100),primeP:((qc+ql)/qs*100),admin:11076*3/qs*100,note:'Q1 ממוצע (ינ–מרץ)'};
+  } else if(lbl==='כל'){
+    const all=histData;
+    const as=all.reduce((s,m)=>s+m.sales,0),ac=all.reduce((s,m)=>s+m.cogs,0),al=all.reduce((s,m)=>s+m.labor,0);
+    d={cogsP:(ac/as*100),laborP:(al/as*100),primeP:((ac+al)/as*100),admin:all.reduce((s,m)=>s+m.admin,0)/as*100,note:'YTD ממוצע'};
+  } else {
+    d=histData.find(m=>m.m===lbl);
+  }
+  if(!d)return;
+  const prime = d.primeNormP ?? d.primeP;
+  const labor = d.laborNormP ?? d.laborP;
+  $('gVal').textContent    = pct(prime);
+  $('gSub').textContent    = lbl+(d.laborNormP?' (מנורמל)':'');
+  $('gFood').textContent   = pct(d.cogsP);
+  $('gLabor').textContent  = pct(labor)+(d.laborNormP?' *':'');
+  $('gAdmin').textContent  = pct(d.admin/d.sales*100||d.admin);
+  $('gNote').textContent   = d.note||'';
+  const fill = Math.min(prime/100,1);
+  $('gArc').setAttribute('stroke-dashoffset', 188.5*(1-fill));
+  $('gArc').setAttribute('stroke', prime<65?'#16a34a':prime<75?'#f59e0b':'#ef4444');
+}
+showGauge('ינואר');
+
+// P&L table
+const plTbody = $('plTbody');
+let ytdS=0,ytdC=0,ytdL=0,ytdN=0;
+mData.forEach(m=>{
+  ytdS+=m.sales; if(m.cogs)ytdC+=m.cogs; if(m.labor)ytdL+=m.labor; if(m.net)ytdN+=m.net;
+  const netCls = m.net==null?'':m.net>=0?'color:#16a34a;font-weight:600':'color:#dc2626;font-weight:600';
+  plTbody.innerHTML+=`<tr>
+    <td><strong>${m.m}</strong></td>
+    <td class="num">${money(m.sales)}</td>
+    <td class="num">${m.cogs?money(m.cogs):'—'}</td>
+    <td class="num">${pct(m.cogsP)}</td>
+    <td class="num">${m.labor?money(m.labor):'—'}</td>
+    <td class="num">${m.laborNormP?pct(m.laborNormP)+' *':pct(m.laborP)}</td>
+    <td class="num">${m.primeNormP?pct(m.primeNormP)+' *':pct(m.primeP)}</td>
+    <td class="num" style="${netCls}">${money(m.net)}</td>
+    <td style="font-size:11px;color:#94a3b8">${m.note}</td>
+  </tr>`;
+});
+plTbody.innerHTML+=`<tr style="background:#f8fafc;font-weight:600">
+  <td>סה"כ YTD</td>
+  <td class="num">${money(ytdS)}</td>
+  <td class="num">${money(ytdC)}</td>
+  <td class="num">${pct(ytdC/ytdS*100)}</td>
+  <td class="num">${money(ytdL)}</td>
+  <td class="num">${pct(ytdL/ytdS*100)}</td>
+  <td class="num">${pct((ytdC+ytdL)/ytdS*100)}</td>
+  <td class="num" style="${ytdN>=0?'color:#16a34a':'color:#dc2626'}">${money(ytdN)}</td>
+  <td></td>
+</tr>`;
+
+</script>
+</body>
+</html>
