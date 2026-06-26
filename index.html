@@ -124,7 +124,7 @@
 
   <!-- Business KPIs -->
   <div class="panel">
-    <div class="panel-title">Business Performance — Jan–Apr 2026 (closed months)</div>
+    <div class="panel-title">Business Performance — Jan–May 2026 (closed months)</div>
     <div class="panel-sub">Official QuickBooks report · net profit includes all fixed expenses</div>
     <div class="kpi-row c4" style="margin-bottom:16px">
       <div class="kpi">
@@ -364,7 +364,7 @@ const mData = [
   {m:'February', sales:95247,  cogs:37096, labor:22575, admin:8000,  overhead:22766, net:4810,   cogsP:38.9, laborP:23.7, primeP:62.6, netP:5.05,  note:'QB report ✓'},
   {m:'March',    sales:125975, cogs:49013, labor:22389, admin:8000,  overhead:27866, net:18707,  cogsP:38.9, laborP:17.8, primeP:56.7, netP:14.85, note:'Pre-Passover inventory build'},
   {m:'April',    sales:83246,  cogs:30079, labor:20439, admin:8000,  overhead:14888, net:9840,   cogsP:36.1, laborP:24.6, primeP:60.7, netP:11.82, note:'Passover disruption'},
-  {m:'May',      sales:94119,  cogs:26122, labor:30117, admin:10000, overhead:null,  net:null,   cogsP:27.8, laborP:32.0, primeP:59.8, netP:null,  note:'Preliminary — books not closed'},
+  {m:'May',      sales:94119,  cogs:26122, labor:28157, admin:10632, overhead:23656, net:5552,   cogsP:27.8, laborP:29.9, primeP:57.7, netP:5.90,  note:'QB close ✓ · catering $3,520'},
   {m:'June',     sales:/*JUNE_MTD_START*/86078/*JUNE_MTD_END*/, cogs:null, labor:null, admin:null, overhead:null, net:null, cogsP:null, laborP:null, primeP:null, netP:null, note:'In progress (MTD)'},
 ];
 
@@ -664,7 +664,7 @@ const ytdS=cl.reduce((s,m)=>s+m.sales,0), ytdC=cl.reduce((s,m)=>s+m.cogs,0),
       ytdL=cl.reduce((s,m)=>s+m.labor,0), ytdO=cl.reduce((s,m)=>s+m.overhead,0),
       ytdN=cl.reduce((s,m)=>s+m.net,0);
 plT.innerHTML+=`<tr style="background:#f8fafc;font-weight:700">
-  <td>YTD (Jan–Apr)</td><td class="num">${money(ytdS)}</td><td class="num">${money(ytdC)}</td>
+  <td>YTD (${cl[0].m.slice(0,3)}–${cl[cl.length-1].m.slice(0,3)})</td><td class="num">${money(ytdS)}</td><td class="num">${money(ytdC)}</td>
   <td class="num">${pct(ytdC/ytdS*100)}</td><td class="num">${money(ytdL)}</td>
   <td class="num">${pct(ytdL/ytdS*100)}</td><td class="num">${pct((ytdC+ytdL)/ytdS*100)}</td>
   <td class="num">${money(ytdO)}</td>
