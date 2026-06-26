@@ -418,6 +418,7 @@ const weeks = [
   {week:"May 31–Jun 6",cl:10785,cng:12058, ub:5232,  total:28076},
   {week:"Jun 7–13",   cl:2260,  cng:6783,  ub:2484,  sn:14472, total:25998},
   {week:"Jun 14–20",  cl:3907,  cng:2079,  ub:4250,  sn:26406, total:36642},
+  {week:"Jun 21–27",  cng:1286, sn:30588, total:31874, partial:true},
 ];
 
 // Labor hours from Connecteam Time Clock — updated weekly (each Sunday).
@@ -555,8 +556,8 @@ const labMap = {};
 laborWeeks.forEach(l=>{ labMap[wkKey(l.week)] = l.hours; });
 const eff = weeks.map(w=>{
   const hrs = labMap[wkKey(w.week)];
-  return { week:w.week, rev:w.total, hrs, perHr: hrs ? w.total/hrs : null };
-}).filter(e=>e.hrs);
+  return { week:w.week, rev:w.total, hrs, perHr: hrs ? w.total/hrs : null, partial:w.partial };
+}).filter(e=>e.hrs && !e.partial);
 if(eff.length){
   const effT=$('effTbody');
   eff.forEach(e=>{
@@ -623,11 +624,12 @@ new Chart($('weeklyChart').getContext('2d'),{
             y:{stacked:true,grid:{color:'#f1f5f9'},ticks:{font:{family:'Inter',size:11},callback:v=>'$'+Math.round(v/1000)+'K'}}}}
 });
 
-const avgWeek=Math.round(weeks.filter(w=>!w.passover).reduce((s,w)=>s+w.total,0)/weeks.filter(w=>!w.passover).length);
+const avgWeek=Math.round(weeks.filter(w=>!w.passover&&!w.partial).reduce((s,w)=>s+w.total,0)/weeks.filter(w=>!w.passover&&!w.partial).length);
 const tbody=$('weeklyTbody');
 weeks.forEach(w=>{
   let tag,cls;
-  if(w.passover){tag='🕍 Passover';cls='tag-pas';}
+  if(w.partial){tag='🔵 In progress';cls='tag-neu';}
+  else if(w.passover){tag='🕍 Passover';cls='tag-pas';}
   else if(w.total>=26000){tag='🟢 Strong';cls='tag-pos';}
   else if(w.total>=18000){tag='🟡 Average';cls='tag-neu';}
   else{tag='🔴 Weak';cls='tag-neg';}
