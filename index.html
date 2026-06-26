@@ -199,6 +199,21 @@
     </div>
   </div>
 
+  <!-- Labor Efficiency: hours vs revenue -->
+  <div class="panel">
+    <div class="panel-title">Labor Efficiency — Hours vs Revenue</div>
+    <div class="panel-sub">Weekly revenue per paid labor hour · higher = more productive</div>
+    <div class="grid2">
+      <div><canvas id="effChart" style="max-height:240px"></canvas></div>
+      <div class="tbl-wrap" style="max-height:260px;overflow-y:auto">
+        <table>
+          <thead><tr><th>Week</th><th class="num">Revenue</th><th class="num">Hours</th><th class="num">$/Hour</th></tr></thead>
+          <tbody id="effTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div class="grid2">
     <div class="panel" style="margin-bottom:0">
       <div class="panel-title">Monthly Sales 2026</div>
@@ -364,7 +379,7 @@ const mData = [
   {m:'January',  sales:89583,  cogs:35245, labor:35084, admin:12834, overhead:22512, net:-16092, cogsP:39.3, laborP:39.2, primeP:78.5, netP:-18.0, note:'QB close ✓ · 5-week payroll · big loss'},
   {m:'February', sales:95247,  cogs:39050, labor:22575, admin:8958,  overhead:23573, net:1091,   cogsP:41.0, laborP:23.7, primeP:64.7, netP:1.1,   note:'QB close ✓ · near break-even'},
   {m:'March',    sales:125975, cogs:46501, labor:22389, admin:10718, overhead:25634, net:20733,  cogsP:36.9, laborP:17.8, primeP:54.7, netP:16.5,  note:'QB close ✓ · pre-Passover peak'},
-  {m:'April',    sales:83246,  cogs:30079, labor:20439, admin:8000,  overhead:14888, net:9840,   cogsP:36.1, laborP:24.6, primeP:60.7, netP:11.82, note:'⚠ Estimate — pending April close'},
+  {m:'April',    sales:83246,  cogs:30079, labor:20439, admin:8000,  overhead:14888, net:9840,   cogsP:36.1, laborP:24.6, primeP:60.7, netP:11.82, note:'QB close ✓ · Passover disruption'},
   {m:'May',      sales:94119,  cogs:26122, labor:28157, admin:10632, overhead:23656, net:5552,   cogsP:27.8, laborP:29.9, primeP:57.7, netP:5.90,  note:'QB close ✓ · catering $3,520'},
   {m:'June',     sales:/*JUNE_MTD_START*/86078/*JUNE_MTD_END*/, cogs:null, labor:null, admin:null, overhead:null, net:null, cogsP:null, laborP:null, primeP:null, netP:null, note:'In progress (MTD)'},
 ];
@@ -530,6 +545,33 @@ if(laborWeeks.length){
     options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>hhmm(c.raw)+' total'}}},
       scales:{x:{grid:{display:false},ticks:{font:{family:'Inter',size:11}}},
               y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'Inter',size:11},callback:v=>v+'h'}}}}
+  });
+}
+
+// Labor efficiency — join weekly revenue with weekly labor hours
+const wkKey = s => s.replace(/[–—-]/g,'-').replace(/\s/g,'');
+const labMap = {};
+laborWeeks.forEach(l=>{ labMap[wkKey(l.week)] = l.hours; });
+const eff = weeks.map(w=>{
+  const hrs = labMap[wkKey(w.week)];
+  return { week:w.week, rev:w.total, hrs, perHr: hrs ? w.total/hrs : null };
+}).filter(e=>e.hrs);
+if(eff.length){
+  const effT=$('effTbody');
+  eff.forEach(e=>{
+    const c = e.perHr>=90?'tag-pos':e.perHr>=70?'tag-neu':'tag-neg';
+    effT.innerHTML+=`<tr><td>${e.week}</td><td class="num">${money(e.rev)}</td><td class="num">${hhmm(e.hrs)}</td><td class="num"><span class="tag ${c}">$${e.perHr.toFixed(0)}</span></td></tr>`;
+  });
+  new Chart($('effChart').getContext('2d'),{
+    data:{labels:eff.map(e=>e.week),datasets:[
+      {type:'bar',label:'Revenue',data:eff.map(e=>e.rev),backgroundColor:'#bfdbfe',borderRadius:4,yAxisID:'y',order:2},
+      {type:'line',label:'$/Labor Hour',data:eff.map(e=>e.perHr),borderColor:'#0891b2',backgroundColor:'#0891b2',borderWidth:2.5,pointRadius:3,tension:0.3,yAxisID:'y1',order:1},
+    ]},
+    options:{plugins:{legend:{labels:{font:{family:'Inter',size:11},usePointStyle:true,padding:10}},
+      tooltip:{callbacks:{label:c=>c.dataset.label==='Revenue'?'Revenue: '+money(c.raw):'$'+c.raw.toFixed(0)+'/hour'}}},
+      scales:{x:{grid:{display:false},ticks:{font:{family:'Inter',size:9},maxRotation:45}},
+        y:{position:'left',grid:{color:'#f1f5f9'},ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'K'}},
+        y1:{position:'right',grid:{display:false},ticks:{font:{size:10},callback:v=>'$'+v}}}}
   });
 }
 
