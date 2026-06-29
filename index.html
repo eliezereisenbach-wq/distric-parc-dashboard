@@ -520,27 +520,26 @@ const bizC=histFull.reduce((s,m)=>s+m.cogs,0);
 const bizL=histFull.reduce((s,m)=>s+m.labor,0);
 const bizN=histFull.reduce((s,m)=>s+m.net,0);
 
-// New KPI calculations
-const regularWeeks=weeks.filter(w=>!w.passover&&!w.partial);
-const currWeek=regularWeeks[regularWeeks.length-1];
+// New KPI calculations (temporarily disabled - debugging)
+const regularWeeks=weeks.filter(w=>!w.passover&&!w.partial)||[];
+const currWeek=regularWeeks.length>0?regularWeeks[regularWeeks.length-1]:null;
 const prevWeek=regularWeeks.length>1?regularWeeks[regularWeeks.length-2]:null;
-const weekVsWeek=prevWeek?Math.round((currWeek.total-prevWeek.total)/prevWeek.total*100):0;
+const weekVsWeek=currWeek&&prevWeek?Math.round((currWeek.total-prevWeek.total)/prevWeek.total*100):0;
 
-const juneWeeks=weeks.filter(w=>w.week.includes('Jun')&&!w.partial);
-const juneLaborHours=laborWeeks.filter(w=>w.week.includes('Jun')).reduce((s,w)=>s+w.hours,0);
-const juneData=mData.find(m=>m.m==='June');
-const laborEff=juneData&&juneData.sales&&juneLaborHours>0?Math.round(juneData.sales/juneLaborHours):0;
+const juneData=mData.find(m=>m.m==='June')||{};
+const juneLaborHours=laborWeeks.filter(w=>w.week&&w.week.includes('Jun')).reduce((s,w)=>s+(w.hours||0),0)||0;
+const laborEff=juneData.sales&&juneLaborHours>0?Math.round(juneData.sales/juneLaborHours):0;
 
-const snappyTotal=weeks.reduce((s,w)=>s+(w.sn||0),0);
-const channelTotals={Clover:totCl,Snappy:snappyTotal,Curbngo:totCng,Uber:totUb};
-const bestChannel=Object.entries(channelTotals).sort((a,b)=>b[1]-a[1])[0];
+const snappyTotal=weeks.reduce((s,w)=>s+(w.sn||0),0)||0;
+const channelTotals={Clover:totCl||0,Snappy:snappyTotal,Curbngo:totCng||0,Uber:totUb||0};
+const bestChannel=Object.entries(channelTotals).sort((a,b)=>b[1]-a[1])[0]||['—',0];
 
 const today=new Date();
 const daysInJune=30;
 const daysElapsed=Math.min(today.getDate(),daysInJune);
-const projectedMonth=juneData?Math.round(juneData.sales/daysElapsed*daysInJune):0;
+const projectedMonth=juneData.sales?Math.round(juneData.sales/Math.max(daysElapsed,1)*daysInJune):0;
 
-const junePayrollPct=juneData&&juneData.sales&&juneData.labor?Math.round(juneData.labor/juneData.sales*100):0;
+const junePayrollPct=juneData.sales&&juneData.labor?Math.round(juneData.labor/juneData.sales*100):0;
 
 if(SNAPPY_UPDATED){
   const d=new Date(SNAPPY_UPDATED);
