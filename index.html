@@ -531,7 +531,8 @@ const juneLaborHours=laborWeeks.filter(w=>w.week.includes('Jun')).reduce((s,w)=>
 const juneData=mData.find(m=>m.m==='June');
 const laborEff=juneData&&juneData.sales&&juneLaborHours>0?Math.round(juneData.sales/juneLaborHours):0;
 
-const channelTotals={Clover:totCl,Snappy:Object.values(byM).reduce((s,m)=>s+(m.sn||0),0),Curbngo:totCng,Uber:totUb};
+const snappyTotal=weeks.reduce((s,w)=>s+(w.sn||0),0);
+const channelTotals={Clover:totCl,Snappy:snappyTotal,Curbngo:totCng,Uber:totUb};
 const bestChannel=Object.entries(channelTotals).sort((a,b)=>b[1]-a[1])[0];
 
 const today=new Date();
