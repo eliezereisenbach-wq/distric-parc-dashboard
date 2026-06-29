@@ -527,7 +527,7 @@ const prevWeek=regularWeeks.length>1?regularWeeks[regularWeeks.length-2]:null;
 const weekVsWeek=prevWeek?Math.round((currWeek.total-prevWeek.total)/prevWeek.total*100):0;
 
 const juneWeeks=weeks.filter(w=>w.week.includes('Jun')&&!w.partial);
-const juneLaborHours=laborWeeks.filter(w=>w.includes('Jun')).reduce((s,w)=>{const m=w.match(/(\d+):(\d+)/);return m?s+parseInt(m[1])+parseInt(m[2])/60:s},0);
+const juneLaborHours=laborWeeks.filter(w=>w.week.includes('Jun')).reduce((s,w)=>s+w.hours,0);
 const juneData=mData.find(m=>m.m==='June');
 const laborEff=juneData&&juneData.sales&&juneLaborHours>0?Math.round(juneData.sales/juneLaborHours):0;
 
@@ -539,8 +539,7 @@ const daysInJune=30;
 const daysElapsed=Math.min(today.getDate(),daysInJune);
 const projectedMonth=juneData?Math.round(juneData.sales/daysElapsed*daysInJune):0;
 
-const juneLaborCost=juneLaborHours*25;
-const junePayrollPct=juneData&&juneData.sales?Math.round(juneLaborCost/juneData.sales*100):0;
+const junePayrollPct=juneData&&juneData.sales&&juneData.labor?Math.round(juneData.labor/juneData.sales*100):0;
 
 if(SNAPPY_UPDATED){
   const d=new Date(SNAPPY_UPDATED);
