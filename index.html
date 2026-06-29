@@ -228,7 +228,7 @@
     </div>
     <div class="panel" style="margin-bottom:0">
       <div class="panel-title">Channel Split YTD</div>
-      <div class="panel-sub">Clover · Curbngo · Uber Eats</div>
+      <div class="panel-sub">Clover · Snappy · Curbngo · Uber Eats</div>
       <canvas id="channelDoughnut" style="max-height:200px"></canvas>
       <div id="channelLegend" style="margin-top:14px;display:flex;flex-direction:column;gap:8px"></div>
     </div>
@@ -486,7 +486,8 @@ const lastMonth= mData[mData.length-1];
 
 let totCl=0,totCng=0,totUb=0;
 Object.values(byM).forEach(m=>{totCl+=m.cl;totCng+=m.cng;totUb+=m.ub;});
-const totAll=totCl+totCng+totUb;
+const totSn=weeks.reduce((s,w)=>s+(w.sn||0),0);
+const totAll=totCl+totCng+totUb+totSn;
 
 const bizS=histFull.reduce((s,m)=>s+m.sales,0);
 const bizC=histFull.reduce((s,m)=>s+m.cogs,0);
@@ -605,12 +606,12 @@ new Chart($('monthlySalesChart').getContext('2d'),{
 // Doughnut
 new Chart($('channelDoughnut').getContext('2d'),{
   type:'doughnut',
-  data:{labels:['Clover','Curbngo','Uber Eats'],
-    datasets:[{data:[totCl,totCng,totUb],backgroundColor:['#2563eb','#ea580c','#7c3aed'],borderWidth:0,hoverOffset:4}]},
+  data:{labels:['Clover','Snappy','Curbngo','Uber Eats'],
+    datasets:[{data:[totCl,totSn,totCng,totUb],backgroundColor:['#2563eb','#0891b2','#ea580c','#7c3aed'],borderWidth:0,hoverOffset:4}]},
   options:{plugins:{legend:{display:false}},cutout:'70%',maintainAspectRatio:true}
 });
 const leg=$('channelLegend');
-[['Clover','#2563eb',totCl],['Curbngo','#ea580c',totCng],['Uber Eats','#7c3aed',totUb]].forEach(([n,c,v])=>{
+[['Clover','#2563eb',totCl],['Snappy','#0891b2',totSn],['Curbngo','#ea580c',totCng],['Uber Eats','#7c3aed',totUb]].forEach(([n,c,v])=>{
   leg.innerHTML+=`<div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:${c};display:inline-block"></span><span style="font-size:12px">${n}</span></div><span style="font-size:12px;font-weight:600">${money(v)} · ${pct(v/totAll*100)}</span></div>`;
 });
 
