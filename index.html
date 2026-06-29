@@ -633,12 +633,16 @@ new Chart($('weeklyChart').getContext('2d'),{
             y:{stacked:true,grid:{color:'#f1f5f9'},ticks:{font:{family:'Inter',size:11},callback:v=>'$'+Math.round(v/1000)+'K'}}}}
 });
 
-const avgWeek=Math.round(weeks.filter(w=>!w.passover&&!w.partial).reduce((s,w)=>s+w.total,0)/weeks.filter(w=>!w.passover&&!w.partial).length);
+const regularWeeks=weeks.filter(w=>!w.passover&&!w.partial);
+const avgWeek=Math.round(regularWeeks.reduce((s,w)=>s+w.total,0)/regularWeeks.length);
+const weakestWeek=regularWeeks.length>0?Math.min(...regularWeeks.map(w=>w.total)):0;
 const tbody=$('weeklyTbody');
 weeks.forEach(w=>{
   let tag,cls;
   if(w.partial){tag='🔵 In progress';cls='tag-neu';}
   else if(w.passover){tag='🕍 Passover';cls='tag-pas';}
+  else if(w.total===weakestWeek){tag='🚨 Weakest week';cls='tag-neg';}
+  else if(w.total<avgWeek){tag='🚩 Below avg';cls='tag-neg';}
   else if(w.total>=26000){tag='🟢 Strong';cls='tag-pos';}
   else if(w.total>=18000){tag='🟡 Average';cls='tag-neu';}
   else{tag='🔴 Weak';cls='tag-neg';}
