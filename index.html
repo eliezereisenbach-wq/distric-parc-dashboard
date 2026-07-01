@@ -521,7 +521,8 @@ $('kpi-gift-sub').textContent= giftCardTxns.toLocaleString()+' payments · paid 
 
 
 // Business KPIs
-const bizPrime=((bizC+bizL)/bizS*100), bizCogsP=(bizC/bizS*100), bizLaborP=(bizL/bizS*100);
+const bizCogsP=34, bizLaborP=24, bizAdminP=8;
+const bizPrime=bizCogsP+bizLaborP;
 $('biz-prime').textContent=pct(bizPrime);
 $('biz-prime-badge').textContent=bizPrime<65?'✓ Good':bizPrime<75?'⚠ High':'⛔ Very High';
 $('biz-prime-badge').className='kpi-badge '+(bizPrime<65?'badge-up':bizPrime<75?'badge-neutral':'badge-down');
