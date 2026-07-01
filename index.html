@@ -172,7 +172,8 @@
       <div class="kpi orange">
         <div class="kpi-label">Annual Pace</div>
         <div class="kpi-value" id="biz-pace">—</div>
-        <div class="kpi-sub">Based on monthly avg</div>
+        <div class="kpi-sub" id="biz-pace-sub">—</div>
+        <span class="kpi-badge" id="biz-pace-badge">—</span>
       </div>
     </div>
   </div>
@@ -576,7 +577,13 @@ $('biz-daily').textContent = money(avgDailyOpen);
 const bestNet=[...histFull].sort((a,b)=>b.net-a.net)[0];
 $('biz-bestnet').textContent=money(bestNet.net);
 $('biz-bestnet-sub').textContent=bestNet.m+' · '+pct(bestNet.net/bestNet.sales*100)+' margin';
-$('biz-pace').textContent=moneyK(ytdSales/mData.length*12);
+const ANNUAL_GOAL=1175000;          // annual sales goal
+const annualPace=ytdSales/mData.length*12;
+const paceVsGoal=(annualPace/ANNUAL_GOAL-1)*100;
+$('biz-pace').textContent=moneyK(annualPace);
+$('biz-pace-sub').textContent=(paceVsGoal>=0?'+':'')+paceVsGoal.toFixed(1)+'% vs '+moneyK(ANNUAL_GOAL)+' goal';
+$('biz-pace-badge').textContent=paceVsGoal>=0?'✓ Above goal':'⚠ Below goal';
+$('biz-pace-badge').className='kpi-badge '+(paceVsGoal>=0?'badge-up':'badge-down');
 
 // Net Margin monthly tracker vs 6% target
 const netTrack=$('netTrack');
@@ -601,8 +608,7 @@ mData.forEach(m=>{
     </div>`;
 });
 
-// Sales vs Annual Goal ($1,175,000)
-const ANNUAL_GOAL=1175000;
+// Sales vs Annual Goal ($1,175,000) — ANNUAL_GOAL defined above
 const monthGoal=ANNUAL_GOAL/12;                    // $97,917/month
 const monthsElapsed=mData.length;                  // 6
 const expectedByNow=monthGoal*monthsElapsed;       // pro-rated goal to date
