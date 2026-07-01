@@ -182,6 +182,13 @@
     </div>
   </div>
 
+  <!-- Net Margin vs 6% Target -->
+  <div class="panel">
+    <div class="panel-title">Net Profit Margin — Monthly vs 6% Target</div>
+    <div class="panel-sub">Green = at/above 6% target · Red = below · Grey = pending close</div>
+    <div id="netTrack" style="display:flex;flex-direction:column;gap:10px;margin-top:6px"></div>
+  </div>
+
   <!-- Labor Hours (Connecteam) -->
   <div class="panel">
     <div class="panel-title">Labor Hours — Connecteam Time Clock</div>
@@ -534,10 +541,12 @@ $('biz-cogs-badge').className='kpi-badge '+(bizCogsP<=TARGET_COGS?'badge-up':'ba
 $('biz-labor').textContent=pct(bizLaborP);
 $('biz-labor-badge').textContent=bizLaborP<=TARGET_LABOR?'✓ On target':'⚠ Above target';
 $('biz-labor-badge').className='kpi-badge '+(bizLaborP<=TARGET_LABOR?'badge-up':'badge-down');
+const TARGET_NET=6;                 // net-margin target: 6%
+const bizNetMargin=bizN/bizS*100;
 $('biz-net').textContent=money(bizN);
-$('biz-net-sub').textContent=pct(Math.abs(bizN/bizS*100))+' margin'+(bizN<0?' (net loss)':'');
-$('biz-net-badge').textContent=bizN>=0?'✓ Profit':'⚠ Loss';
-$('biz-net-badge').className='kpi-badge '+(bizN>=0?'badge-up':'badge-down');
+$('biz-net-sub').textContent=pct(bizNetMargin)+' margin · target 6%';
+$('biz-net-badge').textContent=bizNetMargin>=TARGET_NET?'✓ On target':bizNetMargin>=0?'⚠ Below 6%':'⚠ Loss';
+$('biz-net-badge').className='kpi-badge '+(bizNetMargin>=TARGET_NET?'badge-up':bizNetMargin>=0?'badge-neutral':'badge-down');
 
 // Avg daily sales — open days only (Sun–Fri), excluding Passover week (6d, $2,497) & Purim (1d)
 const OPEN_DAYS_YTD = 148;          // 155 calendar open days (Jan–Jun full) − 6 (Passover week) − 1 (Purim)
@@ -548,6 +557,29 @@ const bestNet=[...histFull].sort((a,b)=>b.net-a.net)[0];
 $('biz-bestnet').textContent=money(bestNet.net);
 $('biz-bestnet-sub').textContent=bestNet.m+' · '+pct(bestNet.net/bestNet.sales*100)+' margin';
 $('biz-pace').textContent=moneyK(ytdSales/mData.length*12);
+
+// Net Margin monthly tracker vs 6% target
+const netTrack=$('netTrack');
+const netScaleMax=20, netScaleMin=-20;               // bar scale range (%)
+const zeroPos=(0-netScaleMin)/(netScaleMax-netScaleMin)*100;   // 0% position on the bar
+const targetPos=(TARGET_NET-netScaleMin)/(netScaleMax-netScaleMin)*100;
+mData.forEach(m=>{
+  const pending=m.netP==null;
+  const val=pending?0:m.netP;
+  const onTarget=val>=TARGET_NET, positive=val>=0;
+  const color=pending?'#cbd5e1':onTarget?'#16a34a':positive?'#f59e0b':'#dc2626';
+  const valPos=(val-netScaleMin)/(netScaleMax-netScaleMin)*100;
+  const barLeft=Math.min(zeroPos,valPos), barW=Math.abs(valPos-zeroPos);
+  netTrack.innerHTML+=`
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="width:38px;font-size:12px;font-weight:600;color:#64748b">${m.m.slice(0,3)}</span>
+      <div style="flex:1;position:relative;height:22px;background:#f1f5f9;border-radius:6px;overflow:hidden">
+        <div style="position:absolute;left:${targetPos}%;top:0;bottom:0;width:2px;background:#0f172a;opacity:.55;z-index:2"></div>
+        <div style="position:absolute;left:${barLeft}%;top:3px;bottom:3px;width:${barW}%;background:${color};border-radius:4px"></div>
+      </div>
+      <span style="width:70px;text-align:right;font-size:12px;font-weight:700;color:${color}">${pending?'Pending':pct(val)}</span>
+    </div>`;
+});
 
 // Channel cards
 $('ov-cl-pct').textContent=pct(totCl/totAll*100);   $('ov-cl-amt').textContent=money(totCl)+' total';
