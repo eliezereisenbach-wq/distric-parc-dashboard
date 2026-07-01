@@ -136,19 +136,19 @@
       <div class="kpi">
         <div class="kpi-label">Prime Cost (YTD)</div>
         <div class="kpi-value" id="biz-prime">—</div>
-        <div class="kpi-sub">COGS% + Labor%</div>
+        <div class="kpi-sub">Target: below 58%</div>
         <span class="kpi-badge" id="biz-prime-badge">—</span>
       </div>
       <div class="kpi">
         <div class="kpi-label">COGS % (YTD)</div>
         <div class="kpi-value" id="biz-cogs">—</div>
-        <div class="kpi-sub">Target: below 38%</div>
+        <div class="kpi-sub">Target: below 34%</div>
         <span class="kpi-badge" id="biz-cogs-badge">—</span>
       </div>
       <div class="kpi">
         <div class="kpi-label">Labor % (YTD)</div>
         <div class="kpi-value" id="biz-labor">—</div>
-        <div class="kpi-sub">Actual payroll</div>
+        <div class="kpi-sub">Target: below 24%</div>
         <span class="kpi-badge" id="biz-labor-badge">—</span>
       </div>
       <div class="kpi">
@@ -521,18 +521,19 @@ $('kpi-gift').textContent    = money(giftCardYTD);
 $('kpi-gift-sub').textContent= giftCardTxns.toLocaleString()+' payments · paid via gift card';
 
 
-// Business KPIs
-const bizCogsP=34, bizLaborP=24, bizAdminP=8;
-const bizPrime=bizCogsP+bizLaborP;
+// Business KPIs — targets: COGS 34%, Labor 24%, Admin 8%
+const TARGET_COGS=34, TARGET_LABOR=24, TARGET_ADMIN=8;
+const bizPrime=((bizC+bizL)/bizS*100), bizCogsP=(bizC/bizS*100), bizLaborP=(bizL/bizS*100);
+const TARGET_PRIME=TARGET_COGS+TARGET_LABOR;
 $('biz-prime').textContent=pct(bizPrime);
-$('biz-prime-badge').textContent=bizPrime<65?'✓ Good':bizPrime<75?'⚠ High':'⛔ Very High';
-$('biz-prime-badge').className='kpi-badge '+(bizPrime<65?'badge-up':bizPrime<75?'badge-neutral':'badge-down');
+$('biz-prime-badge').textContent=bizPrime<=TARGET_PRIME?'✓ On target':'⚠ Above target';
+$('biz-prime-badge').className='kpi-badge '+(bizPrime<=TARGET_PRIME?'badge-up':'badge-down');
 $('biz-cogs').textContent=pct(bizCogsP);
-$('biz-cogs-badge').textContent=bizCogsP<38?'✓ On target':'⚠ Above target';
-$('biz-cogs-badge').className='kpi-badge '+(bizCogsP<38?'badge-up':'badge-neutral');
+$('biz-cogs-badge').textContent=bizCogsP<=TARGET_COGS?'✓ On target':'⚠ Above target';
+$('biz-cogs-badge').className='kpi-badge '+(bizCogsP<=TARGET_COGS?'badge-up':'badge-down');
 $('biz-labor').textContent=pct(bizLaborP);
-$('biz-labor-badge').textContent=bizLaborP<30?'✓ Healthy':'⚠ High';
-$('biz-labor-badge').className='kpi-badge '+(bizLaborP<30?'badge-up':'badge-neutral');
+$('biz-labor-badge').textContent=bizLaborP<=TARGET_LABOR?'✓ On target':'⚠ Above target';
+$('biz-labor-badge').className='kpi-badge '+(bizLaborP<=TARGET_LABOR?'badge-up':'badge-down');
 $('biz-net').textContent=money(bizN);
 $('biz-net-sub').textContent=pct(Math.abs(bizN/bizS*100))+' margin'+(bizN<0?' (net loss)':'');
 $('biz-net-badge').textContent=bizN>=0?'✓ Profit':'⚠ Loss';
